@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id       String   @id @default(cuid())
+  username String   @unique
+  password String
+  name     String?
+
+  categories        Category[]
+  transactions      Transaction[]
+  fixedTransactions FixedTransaction[]
+
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String
+  color String?
+  icon  String?
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions      Transaction[]
+  fixedTransactions FixedTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        TransactionType
+  date        DateTime
+  description String?
+  
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fixedTransactionId String?
+  fixedTransaction   FixedTransaction? @relation(fields: [fixedTransactionId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FixedTransaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        TransactionType
+  dayOfMonth  Int
+  description String?
+  isActive    Boolean  @default(true)
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

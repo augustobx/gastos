@@ -1,65 +1,151 @@
-import Image from "next/image";
+import { getTransactions } from "@/app/actions/transactions";
+import { getFixedTransactions } from "@/app/actions/fixed";
+import { getCategories } from "@/app/actions/categories";
+import { verifySession } from "@/lib/session";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Calendar, Sparkles } from "lucide-react";
+import { TransactionList } from "@/components/transactions/TransactionList";
+import { AddTransactionDialog } from "@/components/transactions/AddTransactionDialog";
+import Link from "next/link";
 
-export default function Home() {
+export default async function DashboardPage() {
+  const session = await verifySession();
+  const allTransactions = await getTransactions();
+  const fixedTransactions = await getFixedTransactions();
+  const categories = await getCategories();
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const monthTxs = allTransactions.filter(tx => {
+    const d = new Date(tx.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const income = monthTxs.filter(tx => tx.type === "INCOME").reduce((acc, tx) => acc + tx.amount, 0);
+  const expense = monthTxs.filter(tx => tx.type === "EXPENSE").reduce((acc, tx) => acc + tx.amount, 0);
+
+  // Total accumulated balance across all time
+  const totalIncome = allTransactions.filter(tx => tx.type === "INCOME").reduce((acc, tx) => acc + tx.amount, 0);
+  const totalExpense = allTransactions.filter(tx => tx.type === "EXPENSE").reduce((acc, tx) => acc + tx.amount, 0);
+  const totalBalance = totalIncome - totalExpense;
+
+  // Fixed totals
+  const fixedIncome = fixedTransactions.filter(ft => ft.type === "INCOME" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
+  const fixedExpense = fixedTransactions.filter(ft => ft.type === "EXPENSE" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
+
+  const recentTxs = allTransactions.slice(0, 7);
+  const monthName = now.toLocaleString("es-AR", { month: "long" });
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="p-4 md:p-8 lg:p-10 space-y-6 max-w-[1200px] mx-auto w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Buenos días, {session?.name?.split(" ")[0] || session?.username} 👋
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Resumen de <span className="capitalize font-medium text-foreground">{monthName} {currentYear}</span>
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <AddTransactionDialog categories={categories} />
+      </div>
+
+      {/* Balance Card - Hero */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-6 md:p-8 text-white shadow-xl shadow-emerald-600/20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+        <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-white/70 text-sm font-medium mb-3">
+            <Sparkles className="w-4 h-4" />
+            Balance Total Acumulado
+          </div>
+          <p className="text-4xl md:text-5xl font-bold tracking-tight">
+            ${totalBalance.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+          </p>
+          <div className="flex items-center gap-4 mt-4 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-white/70">Flujo de este mes:</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5">
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span className="font-medium">${income.toLocaleString("es-AR", { minimumFractionDigits: 0 })}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-lg px-3 py-1.5">
+              <ArrowDownRight className="w-3.5 h-3.5" />
+              <span className="font-medium">${expense.toLocaleString("es-AR", { minimumFractionDigits: 0 })}</span>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-card rounded-2xl border p-4 md:p-5 space-y-3 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ingresos</span>
+            <div className="p-1.5 rounded-lg bg-emerald-500/10">
+              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
+            </div>
+          </div>
+          <p className="text-xl md:text-2xl font-bold text-emerald-500 tracking-tight">
+            ${income.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
+          </p>
+          <p className="text-[11px] text-muted-foreground">{monthTxs.filter(t => t.type === "INCOME").length} movimientos</p>
+        </div>
+
+        <div className="bg-card rounded-2xl border p-4 md:p-5 space-y-3 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Gastos</span>
+            <div className="p-1.5 rounded-lg bg-rose-500/10">
+              <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />
+            </div>
+          </div>
+          <p className="text-xl md:text-2xl font-bold text-rose-500 tracking-tight">
+            ${expense.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
+          </p>
+          <p className="text-[11px] text-muted-foreground">{monthTxs.filter(t => t.type === "EXPENSE").length} movimientos</p>
+        </div>
+
+        <div className="bg-card rounded-2xl border p-4 md:p-5 space-y-3 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fijos +</span>
+            <div className="p-1.5 rounded-lg bg-sky-500/10">
+              <TrendingUp className="w-3.5 h-3.5 text-sky-500" />
+            </div>
+          </div>
+          <p className="text-xl md:text-2xl font-bold text-sky-500 tracking-tight">
+            ${fixedIncome.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
+          </p>
+          <p className="text-[11px] text-muted-foreground">Ingresos recurrentes</p>
+        </div>
+
+        <div className="bg-card rounded-2xl border p-4 md:p-5 space-y-3 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fijos −</span>
+            <div className="p-1.5 rounded-lg bg-amber-500/10">
+              <Calendar className="w-3.5 h-3.5 text-amber-500" />
+            </div>
+          </div>
+          <p className="text-xl md:text-2xl font-bold text-amber-500 tracking-tight">
+            ${fixedExpense.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
+          </p>
+          <p className="text-[11px] text-muted-foreground">Gastos recurrentes</p>
+        </div>
+      </div>
+
+      {/* Recent Transactions */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">Últimos Movimientos</h3>
+          <Link href="/transactions" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+            Ver todos →
+          </Link>
+        </div>
+        <TransactionList transactions={recentTxs} categories={categories} compact />
+      </div>
     </div>
   );
 }
