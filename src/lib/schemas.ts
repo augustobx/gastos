@@ -15,6 +15,7 @@ export const fixedTransactionSchema = z.object({
   description: z.string().optional(),
   categoryId: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
+  totalInstallments: z.coerce.number().positive().int().optional().nullable(),
 });
 
 export const categorySchema = z.object({

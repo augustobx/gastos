@@ -42,6 +42,7 @@ export function AddFixedTransactionDialog({ categories, initialData, trigger }: 
       amount: initialData?.amount,
       description: initialData?.description || "",
       categoryId: initialData?.categoryId || undefined,
+      totalInstallments: initialData?.totalInstallments || undefined,
     }
   });
 
@@ -148,7 +149,22 @@ export function AddFixedTransactionDialog({ categories, initialData, trigger }: 
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <Label htmlFor="totalInstallments" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cuotas Totales (Opcional)</Label>
+              <Input 
+                className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-background" 
+                id="totalInstallments" 
+                type="number" 
+                min="1" 
+                {...register("totalInstallments", { valueAsNumber: true })} 
+                placeholder="Ej. 12" 
+                defaultValue={initialData?.totalInstallments || ""}
+              />
+              {errors.totalInstallments && <p className="text-rose-500 text-xs">{errors.totalInstallments.message as string}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
                 <Label htmlFor="categoryId" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Categoría</Label>
                 <AddCategoryDialog 
                   trigger={
@@ -170,7 +186,6 @@ export function AddFixedTransactionDialog({ categories, initialData, trigger }: 
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
           <Button 
             type="submit" 

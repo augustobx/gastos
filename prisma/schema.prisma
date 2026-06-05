@@ -69,6 +69,8 @@ model FixedTransaction {
   dayOfMonth  Int
   description String?
   isActive    Boolean  @default(true)
+  totalInstallments Int?
+  paidInstallments  Int  @default(0)
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])

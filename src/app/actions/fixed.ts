@@ -31,6 +31,7 @@ export async function createFixedTransaction(data: z.infer<typeof fixedTransacti
       description: parsed.description,
       categoryId: parsed.categoryId || null,
       isActive: parsed.isActive,
+      totalInstallments: parsed.totalInstallments,
       userId: session.userId
     },
   });
@@ -64,7 +65,8 @@ export async function updateFixedTransaction(id: string, data: z.infer<typeof fi
       dayOfMonth: parsed.dayOfMonth,
       description: parsed.description,
       categoryId: parsed.categoryId || null,
-      isActive: parsed.isActive
+      isActive: parsed.isActive,
+      totalInstallments: parsed.totalInstallments
     },
   });
 
@@ -79,12 +81,29 @@ export async function payFixedTransaction(id: string, date: Date) {
   const fixedTx = await prisma.fixedTransaction.findUnique({ where: { id, userId: session.userId } });
   if (!fixedTx) throw new Error("Not found");
 
+  let desc = fixedTx.description || "Pago fijo";
+  let isActive = fixedTx.isActive;
+  let paidInstallments = fixedTx.paidInstallments;
+
+  if (fixedTx.totalInstallments) {
+    paidInstallments += 1;
+    desc = `${desc} (Cuota ${paidInstallments}/${fixedTx.totalInstallments})`;
+    if (paidInstallments >= fixedTx.totalInstallments) {
+      isActive = false;
+    }
+    
+    await prisma.fixedTransaction.update({
+      where: { id: fixedTx.id },
+      data: { paidInstallments, isActive }
+    });
+  }
+
   await prisma.transaction.create({
     data: {
       amount: fixedTx.amount,
       type: fixedTx.type,
       date: date,
-      description: fixedTx.description || "Pago fijo",
+      description: desc,
       categoryId: fixedTx.categoryId,
       fixedTransactionId: fixedTx.id,
       userId: session.userId
@@ -99,9 +118,27 @@ export async function unpayFixedTransaction(transactionId: string) {
   const session = await verifySession();
   if (!session) throw new Error("Unauthorized");
 
-  await prisma.transaction.delete({
-    where: { id: transactionId, userId: session.userId }
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId, userId: session.userId },
+    include: { fixedTransaction: true }
   });
+
+  if (!tx) return;
+
+  await prisma.transaction.delete({
+    where: { id: transactionId }
+  });
+
+  if (tx.fixedTransaction && tx.fixedTransaction.totalInstallments) {
+    const paidInstallments = Math.max(0, tx.fixedTransaction.paidInstallments - 1);
+    await prisma.fixedTransaction.update({
+      where: { id: tx.fixedTransaction.id },
+      data: { 
+        paidInstallments,
+        isActive: paidInstallments < tx.fixedTransaction.totalInstallments
+      }
+    });
+  }
 
   revalidatePath("/fixed");
   revalidatePath("/");

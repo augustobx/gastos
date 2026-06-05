@@ -85,6 +85,14 @@ export function FixedTransactionList({
                       </span>
                     </>
                   )}
+                  {tx.totalInstallments && (
+                    <>
+                      <span className="text-muted-foreground/40">·</span>
+                      <span className="text-[11px] text-sky-500 font-medium bg-sky-500/10 px-1.5 py-0.5 rounded-md">
+                        Cuota {tx.paidInstallments}/{tx.totalInstallments}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
