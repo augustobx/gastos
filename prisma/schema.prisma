@@ -7,16 +7,20 @@ datasource db {
 }
 
 model User {
-  id       String   @id @default(cuid())
-  username String   @unique
-  password String
-  name     String?
+  id               String            @id @default(uuid())
+  email            String            @unique
+  username         String            @unique
+  password         String
+  name             String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  mpIgnoreSavings  Boolean           @default(true)
+  mpIgnoreAccountFund Boolean        @default(true)
 
   categories        Category[]
   transactions      Transaction[]
   fixedTransactions FixedTransaction[]
-
-  createdAt DateTime @default(now())
 }
 
 model Category {

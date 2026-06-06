@@ -1,15 +1,22 @@
-import { Wallet, Smartphone, Info, User as UserIcon, LogOut, Zap } from "lucide-react";
+import { Wallet, Smartphone, Info, User as UserIcon, LogOut, Zap, Settings as SettingsIcon } from "lucide-react";
 import { getCategories } from "@/app/actions/categories";
 import { checkMpConnection } from "@/app/actions/mercadopago";
 import { CategoryList } from "@/components/categories/CategoryList";
 import { MpSyncButton } from "@/components/mercadopago/MpSyncButton";
+import { MpSettingsForm } from "@/components/mercadopago/MpSettingsForm";
 import { verifySession } from "@/lib/session";
 import { logoutUser } from "@/app/actions/auth";
+import { prisma } from "@/lib/prisma";
 
 export default async function SettingsPage() {
   const session = await verifySession();
   const categories = await getCategories();
   const mpStatus = await checkMpConnection();
+
+  let user = null;
+  if (session) {
+    user = await prisma.user.findUnique({ where: { id: session.userId } });
+  }
 
   return (
     <div className="p-4 md:p-8 lg:p-10 space-y-6 max-w-[800px] mx-auto w-full">
@@ -18,15 +25,15 @@ export default async function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">Configuración de la aplicación</p>
       </div>
 
-      {session && (
+      {session && user && (
         <div className="bg-card rounded-2xl border overflow-hidden p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
               <UserIcon className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-semibold text-sm">{session.name || session.username}</p>
-              <p className="text-xs text-muted-foreground">@{session.username}</p>
+              <p className="font-semibold text-sm">{user.name || user.username}</p>
+              <p className="text-xs text-muted-foreground">@{user.username}</p>
             </div>
           </div>
           <form action={logoutUser}>
@@ -65,12 +72,27 @@ export default async function SettingsPage() {
         </div>
         <div className="p-5">
           {mpStatus.connected ? (
-            <>
-              <p className="text-xs text-muted-foreground mb-4">
-                Tocá el botón para importar tus últimos movimientos de MercadoPago. Los pagos, transferencias y cobros se registrarán automáticamente como ingresos o gastos.
-              </p>
-              <MpSyncButton />
-            </>
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Tocá el botón para importar tus últimos movimientos de MercadoPago. Los pagos, transferencias y cobros se registrarán automáticamente como ingresos o gastos.
+                </p>
+                <MpSyncButton />
+              </div>
+
+              {user && (
+                <div className="pt-6 border-t border-border/50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <SettingsIcon className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium">Reglas de Sincronización</h3>
+                  </div>
+                  <MpSettingsForm 
+                    initialIgnoreSavings={user.mpIgnoreSavings} 
+                    initialIgnoreAccountFund={user.mpIgnoreAccountFund} 
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <p className="text-xs text-muted-foreground">
               No se pudo conectar con MercadoPago. Verificá que las credenciales (Access Token) estén correctamente configuradas en el archivo .env del servidor.

@@ -26,11 +26,12 @@ export async function syncMercadoPago() {
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) return { error: "No se configuró el Access Token de MercadoPago" };
 
-  // Obtener el ID del usuario de MP para saber si es ingreso o gasto
   const mpUserId = await getMpUserId(token);
   if (!mpUserId) return { error: "No se pudo conectar con MercadoPago. Verificá el Access Token." };
 
-  // Buscar los últimos 100 pagos aprobados de los últimos 60 días
+  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  if (!user) return { error: "Usuario no encontrado" };
+
   const since = new Date();
   since.setDate(since.getDate() - 60);
 
@@ -58,12 +59,25 @@ export async function syncMercadoPago() {
   let skipped = 0;
 
   for (const payment of payments) {
-    // Solo importar pagos aprobados
     if (payment.status !== "approved") continue;
+
+    // Filters based on User Settings
+    if (user.mpIgnoreSavings) {
+      if (payment.operation_type === "partition_transfer" || payment.operation_type === "investment") {
+        skipped++;
+        continue;
+      }
+    }
+
+    if (user.mpIgnoreAccountFund) {
+      if (payment.operation_type === "account_fund") {
+        skipped++;
+        continue;
+      }
+    }
 
     const externalId = `mp_${payment.id}`;
 
-    // Verificar si ya existe para evitar duplicados
     const existing = await prisma.transaction.findUnique({
       where: { externalId },
     });
@@ -73,21 +87,31 @@ export async function syncMercadoPago() {
       continue;
     }
 
-    // Determinar si es ingreso o gasto
-    // Si el collector (quien recibe la plata) soy yo → INGRESO
-    // Si el payer (quien paga) soy yo → GASTO
     const collectorId = String(payment.collector_id || payment.collector?.id || "");
     const isIncome = collectorId === mpUserId;
 
-    // Armar la descripción
-    let desc = payment.description || "";
-    if (!desc && payment.payment_method_id) {
-      desc = `Pago vía ${payment.payment_method_id}`;
+    // Better Description Extraction
+    let desc = payment.description;
+    
+    if (!desc) {
+      desc = payment.point_of_interaction?.transaction_data?.commerce?.name;
     }
-    if (payment.payer?.email && isIncome) {
+    
+    if (!desc && payment.reason) {
+      desc = payment.reason;
+    }
+
+    if (!desc) {
+      if (payment.payment_method_id) {
+        desc = `Pago vía ${payment.payment_method_id}`;
+      } else {
+        desc = isIncome ? "Ingreso MercadoPago" : "Gasto MercadoPago";
+      }
+    }
+
+    if (payment.payer?.email && isIncome && payment.payer.email !== user.email) {
       desc = desc ? `${desc} (de: ${payment.payer.email})` : `Pago de ${payment.payer.email}`;
     }
-    desc = desc || (isIncome ? "Ingreso MercadoPago" : "Gasto MercadoPago");
 
     await prisma.transaction.create({
       data: {
@@ -117,4 +141,20 @@ export async function checkMpConnection() {
 
   const mpUserId = await getMpUserId(token);
   return { connected: !!mpUserId };
+}
+
+export async function updateMpSettings(mpIgnoreSavings: boolean, mpIgnoreAccountFund: boolean) {
+  const session = await verifySession();
+  if (!session) throw new Error("Unauthorized");
+
+  await prisma.user.update({
+    where: { id: session.userId },
+    data: {
+      mpIgnoreSavings,
+      mpIgnoreAccountFund,
+    },
+  });
+
+  revalidatePath("/settings");
+  return { success: true };
 }
