@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Wallet, Repeat, Settings, Inbox } from "lucide-react";
+import { Home, Wallet, Repeat, Settings, Inbox, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Bottom */}
-        <div className="p-4">
+        <div className="p-4 space-y-3">
+          <form action={async () => {
+            const { logoutUser } = await import("@/app/actions/auth");
+            await logoutUser();
+          }}>
+            <button 
+              type="submit"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium text-rose-500 hover:bg-rose-500/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar Sesión
+            </button>
+          </form>
           <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/10 rounded-xl p-4">
             <p className="text-xs font-semibold text-foreground">Gastos PWA</p>
             <p className="text-[11px] text-muted-foreground mt-1">Tu asistente financiero personal</p>
