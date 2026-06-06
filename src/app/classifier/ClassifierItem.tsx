@@ -32,12 +32,13 @@ export function ClassifierItem({ transaction: tx, categories, index }: { transac
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 transition-all hover:bg-muted/30",
+        "flex flex-col p-4 gap-3 transition-all hover:bg-muted/30",
         isUpdating && "opacity-50 pointer-events-none"
       )}
       style={{ animationDelay: `${index * 40}ms` }}
     >
-      <div className="flex items-center gap-4 min-w-0 flex-1">
+      {/* Top Row: Info */}
+      <div className="flex items-start gap-4 min-w-0">
         <div className={cn(
           "shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner",
           isIncome
@@ -46,58 +47,49 @@ export function ClassifierItem({ transaction: tx, categories, index }: { transac
         )}>
           {isIncome ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-base font-semibold text-foreground truncate">
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="text-base font-semibold text-foreground truncate" title={tx.description || (isIncome ? "Ingreso" : "Gasto")}>
             {tx.description || (isIncome ? "Ingreso" : "Gasto")}
           </p>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             <span className={cn(
-              "text-sm font-bold tabular-nums",
+              "text-sm font-bold tabular-nums whitespace-nowrap",
               isIncome ? "text-emerald-500" : "text-rose-500"
             )}>
-              {isIncome ? "+" : "−"}${tx.amount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+              {isIncome ? "+" : "−"} ${tx.amount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
             </span>
-            <span className="text-muted-foreground/40">·</span>
-            <span className="text-xs text-muted-foreground capitalize">
+            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+            <span className="text-xs text-muted-foreground capitalize whitespace-nowrap">
               {new Date(tx.date).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
             </span>
             {tx.source === "mercadopago" && (
               <>
-                <span className="text-muted-foreground/40">·</span>
-                <span className="text-[10px] font-semibold tracking-wider text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-md uppercase">
+                <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+                <span className="text-[10px] font-semibold tracking-wider text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-md uppercase whitespace-nowrap">
                   MP
                 </span>
               </>
             )}
           </div>
-          <div className="mt-2 pr-4 sm:hidden">
-            <input 
-              type="text" 
-              placeholder="Agregar nota o comentario..." 
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full text-sm bg-transparent border-b border-border/50 focus:border-primary pb-1 outline-none transition-colors"
-            />
-          </div>
         </div>
       </div>
 
-      <div className="shrink-0 w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-2">
-        <div className="hidden sm:block w-full sm:w-[200px]">
-          <input 
-            type="text" 
-            placeholder="Agregar nota..." 
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full h-11 px-3 text-sm rounded-xl bg-muted/30 border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-          />
-        </div>
-        <div className="w-full flex items-center gap-2">
-          <div className="w-full sm:w-[200px]">
+      {/* Bottom Row: Actions */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pl-0 sm:pl-16">
+        <input 
+          type="text" 
+          placeholder="Agregar nota o comentario opcional..." 
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="flex-1 h-11 px-3 text-sm rounded-xl bg-muted/30 border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+        />
+        
+        <div className="flex items-center gap-2">
+          <div className="flex-1 sm:w-[220px] sm:flex-none">
             <Select disabled={isUpdating} onValueChange={handleCategorize}>
               <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-border/50 hover:bg-muted focus:ring-primary shadow-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Tag className="w-4 h-4" />
+                  <Tag className="w-4 h-4 shrink-0" />
                   <SelectValue placeholder="Elegir Categoría..." />
                 </div>
               </SelectTrigger>
