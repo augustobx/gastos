@@ -6,25 +6,40 @@ import { ArrowUpRight, ArrowDownRight, TrendingUp, Calendar, Sparkles } from "lu
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { AddTransactionDialog } from "@/components/transactions/AddTransactionDialog";
 import { MpMinimalSyncButton } from "@/components/mercadopago/MpMinimalSyncButton";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import Link from "next/link";
+import { startOfMonth, endOfMonth, parseISO, isAfter, isBefore, isEqual, startOfDay, endOfDay } from "date-fns";
 
-export default async function DashboardPage() {
+export default async function DashboardPage(props: { searchParams: Promise<{ from?: string, to?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await verifySession();
   const allTransactions = await getTransactions();
   const fixedTransactions = await getFixedTransactions();
   const categories = await getCategories();
 
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  
+  // Determine date range
+  let fromDate = startOfMonth(now);
+  let toDate = endOfMonth(now);
+  let isHistoric = false;
 
-  const monthTxs = allTransactions.filter(tx => {
+  if (searchParams.from && searchParams.to) {
+    fromDate = startOfDay(parseISO(searchParams.from));
+    toDate = endOfDay(parseISO(searchParams.to));
+  } else if (searchParams.from === "" && searchParams.to === "") {
+    // Empty strings = Historic (all time)
+    isHistoric = true;
+  }
+
+  const filteredTxs = allTransactions.filter(tx => {
+    if (isHistoric) return true;
     const d = new Date(tx.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    return (isAfter(d, fromDate) || isEqual(d, fromDate)) && (isBefore(d, toDate) || isEqual(d, toDate));
   });
 
-  const income = monthTxs.filter(tx => tx.type === "INCOME").reduce((acc, tx) => acc + tx.amount, 0);
-  const expense = monthTxs.filter(tx => tx.type === "EXPENSE").reduce((acc, tx) => acc + tx.amount, 0);
+  const income = filteredTxs.filter(tx => tx.type === "INCOME").reduce((acc, tx) => acc + tx.amount, 0);
+  const expense = filteredTxs.filter(tx => tx.type === "EXPENSE").reduce((acc, tx) => acc + tx.amount, 0);
 
   // Total accumulated balance across all time
   const totalIncome = allTransactions.filter(tx => tx.type === "INCOME").reduce((acc, tx) => acc + tx.amount, 0);
@@ -35,20 +50,19 @@ export default async function DashboardPage() {
   const fixedIncome = fixedTransactions.filter(ft => ft.type === "INCOME" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
   const fixedExpense = fixedTransactions.filter(ft => ft.type === "EXPENSE" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
 
-  const recentTxs = allTransactions.slice(0, 7);
-  const monthName = now.toLocaleString("es-AR", { month: "long" });
+  const recentTxs = filteredTxs.slice(0, 7);
 
   return (
     <div className="p-4 md:p-8 lg:p-10 space-y-6 max-w-[1200px] mx-auto w-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
             Buenos días, {session?.name?.split(" ")[0] || session?.username} 👋
           </h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            Resumen de <span className="capitalize font-medium text-foreground">{monthName} {currentYear}</span>
-          </p>
+          <div className="mt-2">
+            <DateRangeFilter />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <MpMinimalSyncButton />
@@ -115,7 +129,7 @@ export default async function DashboardPage() {
           <p className="text-xl md:text-2xl font-bold text-emerald-500 tracking-tight">
             ${income.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
           </p>
-          <p className="text-[11px] text-muted-foreground">{monthTxs.filter(t => t.type === "INCOME").length} movimientos</p>
+          <p className="text-[11px] text-muted-foreground">{filteredTxs.filter(t => t.type === "INCOME").length} movimientos</p>
         </div>
 
         <div className="bg-card rounded-2xl border p-4 md:p-5 space-y-3 hover:shadow-md transition-shadow">
@@ -128,7 +142,7 @@ export default async function DashboardPage() {
           <p className="text-xl md:text-2xl font-bold text-rose-500 tracking-tight">
             ${expense.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
           </p>
-          <p className="text-[11px] text-muted-foreground">{monthTxs.filter(t => t.type === "EXPENSE").length} movimientos</p>
+          <p className="text-[11px] text-muted-foreground">{filteredTxs.filter(t => t.type === "EXPENSE").length} movimientos</p>
         </div>
 
         <div className="bg-card rounded-2xl border p-4 md:p-5 space-y-3 hover:shadow-md transition-shadow">
