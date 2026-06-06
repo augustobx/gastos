@@ -109,7 +109,7 @@ export async function syncMercadoPago() {
       }
     }
 
-    if (payment.payer?.email && isIncome && payment.payer.email !== user.email) {
+    if (payment.payer?.email && isIncome) {
       desc = desc ? `${desc} (de: ${payment.payer.email})` : `Pago de ${payment.payer.email}`;
     }
 
