@@ -37,31 +37,14 @@ async function run() {
 
     const externalId = `mp_${payment.id}`;
     
-    // Solo mostramos los últimos 3 para no spammear la terminal
-    if (created + skipped < 3) {
-      console.log(`\nProcessing payment ${payment.id}:`);
-      console.log(`- Amount: ${payment.transaction_amount}`);
-      console.log(`- Description: ${payment.description}`);
-      console.log(`- externalId: ${externalId}`);
-    }
-
-    const existing = await prisma.transaction.findUnique({
-      where: { externalId },
-    });
-
-    if (existing) {
-      if (created + skipped < 3) console.log(`- Result: SKIPPED (Already in DB as ${existing.id})`);
-      skipped++;
-      continue;
-    }
-
-    const collectorId = String(payment.collector_id || payment.collector?.id || "");
-    const isIncome = collectorId === mpUserId;
-    
-    if (created + skipped < 3) {
-      console.log(`- Collector ID: ${collectorId}`);
-      console.log(`- Is Income? ${isIncome}`);
-      console.log(`- Result: CREATED`);
+    if (created + skipped < 5) {
+      console.log(`\n--- Processing payment ${payment.id} ---`);
+      console.log(`Amount: ${payment.transaction_amount}`);
+      console.log(`Description: ${payment.description}`);
+      console.log(`Operation Type: ${payment.operation_type}`);
+      console.log(`Payment Type: ${payment.payment_type_id}`);
+      console.log(`Reason: ${payment.reason || payment.payer?.entity_type}`);
+      console.log(`Full JSON:`, JSON.stringify(payment, null, 2));
     }
 
     created++;
