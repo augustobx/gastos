@@ -52,6 +52,24 @@ export default async function DashboardPage() {
         <AddTransactionDialog categories={categories} />
       </div>
 
+      {/* Uncategorized Alert */}
+      {allTransactions.filter(tx => !tx.categoryId).length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-3 text-amber-600 dark:text-amber-500">
+            <div className="p-2 bg-amber-500/20 rounded-full">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">Tenés {allTransactions.filter(tx => !tx.categoryId).length} movimientos sin clasificar</p>
+              <p className="text-xs opacity-80 mt-0.5">Clasificalos para mantener tus métricas exactas.</p>
+            </div>
+          </div>
+          <Link href="/classifier" className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl text-center transition-colors shadow-sm shadow-amber-500/20">
+            Clasificar Ahora
+          </Link>
+        </div>
+      )}
+
       {/* Balance Card - Hero */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-6 md:p-8 text-white shadow-xl shadow-emerald-600/20">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />

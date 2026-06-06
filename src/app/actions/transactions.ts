@@ -70,3 +70,17 @@ export async function updateTransaction(id: string, data: z.infer<typeof transac
   revalidatePath("/");
   revalidatePath("/transactions");
 }
+
+export async function categorizeTransaction(id: string, categoryId: string | null) {
+  const session = await verifySession();
+  if (!session) throw new Error("Unauthorized");
+
+  await prisma.transaction.update({
+    where: { id, userId: session.userId },
+    data: { categoryId }
+  });
+
+  revalidatePath("/");
+  revalidatePath("/transactions");
+  revalidatePath("/classifier");
+}

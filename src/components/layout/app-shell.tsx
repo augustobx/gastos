@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Wallet, Repeat, Settings } from "lucide-react";
+import { Home, Wallet, Repeat, Settings, Inbox } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { name: "Inicio", href: "/", icon: Home },
   { name: "Movimientos", href: "/transactions", icon: Wallet },
   { name: "Fijos", href: "/fixed", icon: Repeat },
+  { name: "Clasificador", href: "/classifier", icon: Inbox },
   { name: "Ajustes", href: "/settings", icon: Settings },
 ];
 
