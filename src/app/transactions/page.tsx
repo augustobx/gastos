@@ -3,9 +3,10 @@ import { getCategories } from "@/app/actions/categories";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { AddTransactionDialog } from "@/components/transactions/AddTransactionDialog";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { CategoryFilter } from "@/components/ui/category-filter";
 import { startOfMonth, endOfMonth, parseISO, isAfter, isBefore, isEqual, startOfDay, endOfDay } from "date-fns";
 
-export default async function TransactionsPage(props: { searchParams: Promise<{ from?: string, to?: string }> }) {
+export default async function TransactionsPage(props: { searchParams: Promise<{ from?: string, to?: string, category?: string }> }) {
   const searchParams = await props.searchParams;
   const allTransactions = await getTransactions();
   const categories = await getCategories();
@@ -25,10 +26,17 @@ export default async function TransactionsPage(props: { searchParams: Promise<{ 
     isHistoric = true;
   }
 
-  const transactions = allTransactions.filter(tx => {
+  const selectedCategoryId = searchParams.category;
+
+  const dateFilteredTxs = allTransactions.filter(tx => {
     if (isHistoric) return true;
     const d = new Date(tx.date);
     return (isAfter(d, fromDate) || isEqual(d, fromDate)) && (isBefore(d, toDate) || isEqual(d, toDate));
+  });
+
+  const transactions = dateFilteredTxs.filter(tx => {
+    if (!selectedCategoryId) return true;
+    return tx.categoryId === selectedCategoryId;
   });
 
   return (
@@ -39,12 +47,15 @@ export default async function TransactionsPage(props: { searchParams: Promise<{ 
           <p className="text-sm text-muted-foreground mt-1 mb-2">
             {transactions.length} movimientos encontrados
           </p>
-          <DateRangeFilter />
+          <div className="flex items-center gap-2 flex-wrap">
+            <DateRangeFilter />
+            <CategoryFilter categories={categories} />
+          </div>
         </div>
         <AddTransactionDialog categories={categories} />
       </div>
 
-      <TransactionList transactions={transactions} categories={categories} />
+      <TransactionList transactions={transactions as any} categories={categories} />
     </div>
   );
 }
