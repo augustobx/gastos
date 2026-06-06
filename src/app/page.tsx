@@ -7,10 +7,12 @@ import { TransactionList } from "@/components/transactions/TransactionList";
 import { AddTransactionDialog } from "@/components/transactions/AddTransactionDialog";
 import { MpMinimalSyncButton } from "@/components/mercadopago/MpMinimalSyncButton";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { CategoryFilter } from "@/components/ui/category-filter";
+import { DashboardCharts } from "@/components/metrics/DashboardCharts";
 import Link from "next/link";
 import { startOfMonth, endOfMonth, parseISO, isAfter, isBefore, isEqual, startOfDay, endOfDay } from "date-fns";
 
-export default async function DashboardPage(props: { searchParams: Promise<{ from?: string, to?: string }> }) {
+export default async function DashboardPage(props: { searchParams: Promise<{ from?: string, to?: string, category?: string }> }) {
   const searchParams = await props.searchParams;
   const session = await verifySession();
   const allTransactions = await getTransactions();
@@ -32,10 +34,17 @@ export default async function DashboardPage(props: { searchParams: Promise<{ fro
     isHistoric = true;
   }
 
-  const filteredTxs = allTransactions.filter(tx => {
+  const selectedCategoryId = searchParams.category;
+
+  const dateFilteredTxs = allTransactions.filter(tx => {
     if (isHistoric) return true;
     const d = new Date(tx.date);
     return (isAfter(d, fromDate) || isEqual(d, fromDate)) && (isBefore(d, toDate) || isEqual(d, toDate));
+  });
+
+  const filteredTxs = dateFilteredTxs.filter(tx => {
+    if (!selectedCategoryId) return true;
+    return tx.categoryId === selectedCategoryId;
   });
 
   const income = filteredTxs.filter(tx => tx.type === "INCOME").reduce((acc, tx) => acc + tx.amount, 0);
@@ -46,9 +55,13 @@ export default async function DashboardPage(props: { searchParams: Promise<{ fro
   const totalExpense = allTransactions.filter(tx => tx.type === "EXPENSE").reduce((acc, tx) => acc + tx.amount, 0);
   const totalBalance = totalIncome - totalExpense;
 
-  // Fixed totals
-  const fixedIncome = fixedTransactions.filter(ft => ft.type === "INCOME" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
-  const fixedExpense = fixedTransactions.filter(ft => ft.type === "EXPENSE" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
+  // Fixed totals (also filtered by category if selected, optional but good for consistency)
+  const filteredFixedTxs = fixedTransactions.filter(ft => {
+    if (!selectedCategoryId) return true;
+    return ft.categoryId === selectedCategoryId;
+  });
+  const fixedIncome = filteredFixedTxs.filter(ft => ft.type === "INCOME" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
+  const fixedExpense = filteredFixedTxs.filter(ft => ft.type === "EXPENSE" && ft.isActive).reduce((acc, ft) => acc + ft.amount, 0);
 
   const recentTxs = filteredTxs.slice(0, 7);
 
@@ -60,8 +73,9 @@ export default async function DashboardPage(props: { searchParams: Promise<{ fro
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
             Buenos días, {session?.name?.split(" ")[0] || session?.username} 👋
           </h2>
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
             <DateRangeFilter />
+            <CategoryFilter categories={categories} />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -172,6 +186,14 @@ export default async function DashboardPage(props: { searchParams: Promise<{ fro
         </div>
       </div>
 
+      {/* Charts Section */}
+      <DashboardCharts 
+        transactions={filteredTxs as any} 
+        dateFilteredTxs={dateFilteredTxs as any} 
+        categories={categories} 
+        selectedCategoryId={selectedCategoryId} 
+      />
+
       {/* Recent Transactions */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -180,7 +202,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ fro
             Ver todos →
           </Link>
         </div>
-        <TransactionList transactions={recentTxs} categories={categories} compact />
+        <TransactionList transactions={recentTxs as any} categories={categories} compact />
       </div>
     </div>
   );
