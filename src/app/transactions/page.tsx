@@ -21,8 +21,8 @@ export default async function TransactionsPage(props: { searchParams: Promise<{ 
   if (searchParams.from && searchParams.to) {
     fromDate = startOfDay(parseISO(searchParams.from));
     toDate = endOfDay(parseISO(searchParams.to));
-  } else if (searchParams.from === "" && searchParams.to === "") {
-    // Empty strings = Historic (all time)
+  } else {
+    // Empty strings or undefined = Historic (all time)
     isHistoric = true;
   }
 
