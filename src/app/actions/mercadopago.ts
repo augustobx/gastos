@@ -8,7 +8,7 @@ const MP_API = "https://api.mercadopago.com";
 
 async function getMpUserId(token: string): Promise<string | null> {
   try {
-    const res = await fetch(`${MP_API}/v1/users/me`, {
+    const res = await fetch(`https://api.mercadolibre.com/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
@@ -76,7 +76,7 @@ export async function syncMercadoPago() {
     // Determinar si es ingreso o gasto
     // Si el collector (quien recibe la plata) soy yo → INGRESO
     // Si el payer (quien paga) soy yo → GASTO
-    const collectorId = String(payment.collector?.id || "");
+    const collectorId = String(payment.collector_id || payment.collector?.id || "");
     const isIncome = collectorId === mpUserId;
 
     // Armar la descripción
