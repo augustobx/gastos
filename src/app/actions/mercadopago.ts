@@ -106,6 +106,7 @@ export async function syncMercadoPago() {
 
   revalidatePath("/");
   revalidatePath("/transactions");
+  revalidatePath("/classifier");
 
   return { created, skipped, total: payments.length };
 }

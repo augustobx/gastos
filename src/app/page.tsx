@@ -5,6 +5,7 @@ import { verifySession } from "@/lib/session";
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Calendar, Sparkles } from "lucide-react";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { AddTransactionDialog } from "@/components/transactions/AddTransactionDialog";
+import { MpMinimalSyncButton } from "@/components/mercadopago/MpMinimalSyncButton";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -49,7 +50,10 @@ export default async function DashboardPage() {
             Resumen de <span className="capitalize font-medium text-foreground">{monthName} {currentYear}</span>
           </p>
         </div>
-        <AddTransactionDialog categories={categories} />
+        <div className="flex items-center gap-2">
+          <MpMinimalSyncButton />
+          <AddTransactionDialog categories={categories} />
+        </div>
       </div>
 
       {/* Uncategorized Alert */}
