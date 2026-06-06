@@ -1,7 +1,7 @@
 "use client";
 
 import { Transaction, Category } from "@prisma/client";
-import { ArrowUpRight, ArrowDownRight, Tag } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Tag, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { categorizeTransaction } from "@/app/actions/transactions";
 import {
@@ -72,22 +72,44 @@ export function ClassifierItem({ transaction: tx, categories, index }: { transac
         </div>
       </div>
 
-      <div className="shrink-0 w-full sm:w-[200px]">
-        <Select disabled={isUpdating} onValueChange={handleCategorize}>
-          <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-border/50 hover:bg-muted focus:ring-primary shadow-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Tag className="w-4 h-4" />
-              <SelectValue placeholder="Elegir Categoría..." />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id} className="font-medium">
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="shrink-0 w-full sm:w-auto flex items-center gap-2">
+        <div className="w-full sm:w-[200px]">
+          <Select disabled={isUpdating} onValueChange={handleCategorize}>
+            <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-border/50 hover:bg-muted focus:ring-primary shadow-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Tag className="w-4 h-4" />
+                <SelectValue placeholder="Elegir Categoría..." />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id} className="font-medium">
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <button
+          onClick={async () => {
+            if (confirm("¿Eliminar este movimiento?")) {
+              setIsUpdating(true);
+              try {
+                const { deleteTransaction } = await import("@/app/actions/transactions");
+                await deleteTransaction(tx.id);
+              } catch (e) {
+                console.error(e);
+                setIsUpdating(false);
+              }
+            }
+          }}
+          disabled={isUpdating}
+          className="shrink-0 p-2.5 h-11 w-11 flex items-center justify-center rounded-xl border border-border/50 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/20 transition-colors disabled:opacity-50"
+          title="Eliminar movimiento"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );

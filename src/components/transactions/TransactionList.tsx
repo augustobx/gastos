@@ -81,29 +81,27 @@ export function TransactionList({
               )}>
                 {isIncome ? "+" : "−"}${tx.amount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
               </span>
-              {!compact && (
-                <div className="opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1">
-                  <AddTransactionDialog 
-                    categories={categories}
-                    initialData={tx}
-                    trigger={
-                      <button className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
+              <div className="opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1">
+                <AddTransactionDialog 
+                  categories={categories}
+                  initialData={tx}
+                  trigger={
+                    <button className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  }
+                />
+                <button
+                  onClick={() => {
+                    if (confirm("¿Eliminar este movimiento?")) {
+                      deleteTransaction(tx.id);
                     }
-                  />
-                  <button
-                    onClick={() => {
-                      if (confirm("¿Eliminar este movimiento?")) {
-                        deleteTransaction(tx.id);
-                      }
-                    }}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
+                  }}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         );
