@@ -5,6 +5,7 @@ export const transactionSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
   date: z.coerce.date(),
   description: z.string().optional(),
+  notes: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
 });
 

@@ -15,13 +15,14 @@ import { useState } from "react";
 
 export function ClassifierItem({ transaction: tx, categories, index }: { transaction: Transaction, categories: Category[], index: number }) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [notes, setNotes] = useState("");
   const isIncome = tx.type === "INCOME";
 
   const handleCategorize = async (categoryId: string | null) => {
     if (!categoryId) return;
     setIsUpdating(true);
     try {
-      await categorizeTransaction(tx.id, categoryId === "none" ? null : categoryId);
+      await categorizeTransaction(tx.id, categoryId === "none" ? null : categoryId, notes);
     } catch (e) {
       console.error(e);
       setIsUpdating(false);
@@ -69,47 +70,67 @@ export function ClassifierItem({ transaction: tx, categories, index }: { transac
               </>
             )}
           </div>
+          <div className="mt-2 pr-4 sm:hidden">
+            <input 
+              type="text" 
+              placeholder="Agregar nota o comentario..." 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full text-sm bg-transparent border-b border-border/50 focus:border-primary pb-1 outline-none transition-colors"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="shrink-0 w-full sm:w-auto flex items-center gap-2">
-        <div className="w-full sm:w-[200px]">
-          <Select disabled={isUpdating} onValueChange={handleCategorize}>
-            <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-border/50 hover:bg-muted focus:ring-primary shadow-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Tag className="w-4 h-4" />
-                <SelectValue placeholder="Elegir Categoría..." />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id} className="font-medium">
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="shrink-0 w-full sm:w-auto flex flex-col sm:flex-row items-end sm:items-center gap-2">
+        <div className="hidden sm:block w-full sm:w-[200px]">
+          <input 
+            type="text" 
+            placeholder="Agregar nota..." 
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full h-11 px-3 text-sm rounded-xl bg-muted/30 border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+          />
         </div>
-        
-        <button
-          onClick={async () => {
-            if (confirm("¿Eliminar este movimiento?")) {
-              setIsUpdating(true);
-              try {
-                const { deleteTransaction } = await import("@/app/actions/transactions");
-                await deleteTransaction(tx.id);
-              } catch (e) {
-                console.error(e);
-                setIsUpdating(false);
+        <div className="w-full flex items-center gap-2">
+          <div className="w-full sm:w-[200px]">
+            <Select disabled={isUpdating} onValueChange={handleCategorize}>
+              <SelectTrigger className="w-full h-11 rounded-xl bg-muted/50 border-border/50 hover:bg-muted focus:ring-primary shadow-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Tag className="w-4 h-4" />
+                  <SelectValue placeholder="Elegir Categoría..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="font-medium">
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <button
+            onClick={async () => {
+              if (confirm("¿Eliminar este movimiento?")) {
+                setIsUpdating(true);
+                try {
+                  const { deleteTransaction } = await import("@/app/actions/transactions");
+                  await deleteTransaction(tx.id);
+                } catch (e) {
+                  console.error(e);
+                  setIsUpdating(false);
+                }
               }
-            }
-          }}
-          disabled={isUpdating}
-          className="shrink-0 p-2.5 h-11 w-11 flex items-center justify-center rounded-xl border border-border/50 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/20 transition-colors disabled:opacity-50"
-          title="Eliminar movimiento"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
+            }}
+            disabled={isUpdating}
+            className="shrink-0 p-2.5 h-11 w-11 flex items-center justify-center rounded-xl border border-border/50 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/20 transition-colors disabled:opacity-50"
+            title="Eliminar movimiento"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

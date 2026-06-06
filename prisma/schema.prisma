@@ -46,6 +46,7 @@ model Transaction {
   type        TransactionType
   date        DateTime
   description String?
+  notes       String?
   externalId  String?  @unique
   source      String   @default("manual")
   

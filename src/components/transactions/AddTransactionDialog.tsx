@@ -39,6 +39,7 @@ export function AddTransactionDialog({ categories, initialData, trigger }: { cat
       type: initialData?.type || "EXPENSE",
       amount: initialData?.amount,
       description: initialData?.description || "",
+      notes: initialData?.notes || null,
       categoryId: initialData?.categoryId || undefined,
     }
   });
@@ -127,6 +128,16 @@ export function AddTransactionDialog({ categories, initialData, trigger }: { cat
               id="description" 
               {...register("description")} 
               placeholder="Ej. Supermercado, Sueldo..." 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Comentarios (Opcional)</Label>
+            <Input 
+              className="h-11 rounded-xl bg-muted/30 border-border/50 focus:bg-background" 
+              id="notes" 
+              {...register("notes")} 
+              placeholder="Ej. Pagado con tarjeta, es para el viaje..." 
             />
           </div>
 

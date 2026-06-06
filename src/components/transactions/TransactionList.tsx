@@ -58,6 +58,11 @@ export function TransactionList({
                 <p className="text-sm font-medium text-foreground truncate">
                   {tx.description || (isIncome ? "Ingreso" : "Gasto")}
                 </p>
+                {tx.notes && (
+                  <p className="text-xs text-muted-foreground/80 truncate mt-0.5">
+                    {tx.notes}
+                  </p>
+                )}
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[11px] text-muted-foreground">
                     {format(new Date(tx.date), "d MMM yyyy", { locale: es })}
